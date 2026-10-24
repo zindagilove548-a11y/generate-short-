@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube to Shorts Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-6">
+
+    <div class="max-w-md w-full bg-gray-800 p-8 rounded-xl shadow-lg">
+        <h1 class="text-2xl font-bold mb-6 text-center text-red-500">YT Shorts Generator</h1>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm mb-1">YouTube Video URL</label>
+                <input id="yt-url" type="text" placeholder="https://www.youtube.com/watch?v=..." 
+                       class="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-red-500">
+            </div>
+
+            <div class="flex gap-4">
+                <div class="w-1/2">
+                    <label class="block text-sm mb-1">Start (sec)</label>
+                    <input id="start-time" type="number" value="10" class="w-full p-2 rounded bg-gray-700">
+                </div>
+                <div class="w-1/2">
+                    <label class="block text-sm mb-1">End (sec)</label>
+                    <input id="end-time" type="number" value="40" class="w-full p-2 rounded bg-gray-700">
+                </div>
+            </div>
+
+            <button onclick="generateShort()" id="btn" 
+                    class="w-full bg-red-600 hover:bg-red-700 font-semibold py-3 rounded transition">
+                Generate Short
+            </button>
+        </div>
+
+        <p id="status" class="text-center text-sm text-gray-400 mt-4 hidden">Processing video... Please wait.</p>
+
+        <div id="result" class="mt-6 hidden flex flex-col items-center">
+            <h2 class="text-lg font-semibold mb-2">Your Generated Short:</h2>
+            <video id="short-video" controls class="w-64 rounded-lg shadow-md border border-gray-700"></video>
+        </div>
+    </div>
+
+    <script>
+        async function generateShort() {
+            const url = document.getElementById('yt-url').value;
+            const start = parseInt(document.getElementById('start-time').value);
+            const end = parseInt(document.getElementById('end-time').value);
+            const status = document.getElementById('status');
+            const result = document.getElementById('result');
+            const btn = document.getElementById('btn');
+
+            if (!url) return alert("Please enter a YouTube URL");
+
+            status.classList.remove('hidden');
+            result.classList.add('hidden');
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:8000/generate-short', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, start_time: start, end_time: end })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    const video = document.getElementById('short-video');
+                    video.src = data.video_url + "?t=" + new Date().getTime(); // Prevent cache
+                    result.classList.remove('hidden');
+                } else {
+                    alert("Error: " + data.detail);
+                }
+            } catch (err) {
+                alert("Failed to connect to backend.");
+            } finally {
+                status.classList.add('hidden');
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
